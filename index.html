@@ -48,9 +48,9 @@
 </head>
 <body>
 <div class="container">
-    <div class="logo">
-        <img src="images/mms_logo-square.svg">
-    </div>
+    <!--<div class="logo">-->
+        <!--<img src="images/mms_logo-square.svg">-->
+    <!--</div>-->
 </div>
 
 
@@ -60,7 +60,7 @@ const float noiseSwirlValue = 1.;
 const float noiseSwirlStepValue = noiseSwirlValue / float(noiseSwirlSteps);
 
 const float noiseScale = 1.;
-const float noiseTimeScale = 0.04;
+const float noiseTimeScale = 0.1;
 
 uniform float iGlobalTime;
 uniform sampler2D iChannel0;
@@ -71,14 +71,15 @@ varying vec2 vUv;
 
 float simplex(vec3 v);
 float getNoise(vec3 v);
-
+uniform sampler2D texture1;
 
 void main(void)
 {
 	vec2 uv = -1.0 + 2.0 *vUv;
+	vec4 texture = texture2D(texture1, vUv);
 	float noise = getNoise(vec3(uv * noiseScale, iGlobalTime * noiseTimeScale));
-    noise = noise * noise * noise * noise * 0.8;  //more contrast
-    gl_FragColor = vec4(noise, noise, noise, 1.0);
+    noise = noise * noise * noise * noise * 2.0;  //more contrast
+    gl_FragColor = vec4(noise, noise, noise, 1.0-texture.r);
 }
 
 
@@ -244,22 +245,25 @@ float simplex(vec3 v)
 
     var tuniform = {
         iGlobalTime:    { type: 'f', value: 0.1 },
+        texture1: { type: "t", value: THREE.ImageUtils.loadTexture( "textures/mms_logo-square-mask.jpg" ) }
 //        iChannel0:  { type: 't', value: THREE.ImageUtils.loadTexture( 'textures/tex07.jpg') },
 //        iChannel1:  { type: 't', value: THREE.ImageUtils.loadTexture( 'textures/infi.jpg' ) },
     };
+
 
     var mat = new THREE.ShaderMaterial( {
         uniforms: tuniform,
         vertexShader: vshader,
         fragmentShader: fshader,
-        side:THREE.DoubleSide
+        side:THREE.DoubleSide,
+        transparent: true
     } );
 
     var tobject = new THREE.Mesh( new THREE.PlaneGeometry(700, 394,1,1), mat);
 
     var clock = new THREE.Clock();
 
-
+    window.addEventListener( 'resize', onWindowResize, false );
 
     //Add it to the scene
     scene.add( tobject );
@@ -271,6 +275,12 @@ float simplex(vec3 v)
 //        uniforms.light.value.x = event.clientX;
 //        uniforms.light.value.y = event.clientY;
     };
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+    }
 
     //Render everything!
     function render() {
